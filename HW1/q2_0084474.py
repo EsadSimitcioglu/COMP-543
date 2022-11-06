@@ -169,3 +169,7 @@ key_length = find_key_length(dict_of_tripgrah)
 dict_of_ciphers = separete_cipher(key_length, ciphertext_uppercase)
 key = freq_analysis(dict_of_ciphers)
 plaintext = decrypt(ciphertext_uppercase_without_space, key)
+
+with open('q2_0084474.txt', 'w') as f:
+    f.write('Key : ' + str(key) + "\n")
+    f.write('Plaintext : ' + str(plaintext))
