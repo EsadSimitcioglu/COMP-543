@@ -26,19 +26,88 @@ def val_uppercase(val):
 
 
 def decrypt(c, k):
-    output = ''
+    plaintext = ''
     key_index = 0
     for x in c:
         if x == " ":
-            output += " "
+            plaintext += " "
             continue
-        output = output + val_uppercase((uppercase_val(x) - uppercase_val(k[key_index])) % 26)
+        plaintext = plaintext + val_uppercase((uppercase_val(x) - uppercase_val(k[key_index])) % 26)
         if key_index == len(k) - 1:
             key_index = 0
         else:
             key_index = key_index + 1
 
-    return output
+    print("Plain Text : " + plaintext)
+    return plaintext
+
+
+def find_key_length(dict_of_tripgrah):
+    for i in dict_of_tripgrah.values():
+        for j in i:
+            if j > 0:
+                div_list = find_div(j)
+                for div in div_list:
+                    if div in dict_of_div:
+                        dict_of_div[div] += 1
+                    else:
+                        dict_of_div[div] = 0
+
+    key_length = max(dict_of_div, key=dict_of_div.get)
+    return key_length
+
+
+def separete_cipher(key_length, ciphertext_uppercase):
+    for i in range(0, key_length):
+        cipher_segment = str()
+        for index_of_cipher in range(i, len(ciphertext_uppercase), key_length):
+            cipher_segment += ciphertext_uppercase[index_of_cipher]
+        dict_of_ciphers[i] = cipher_segment
+
+    return dict_of_ciphers
+
+
+def freq_analysis(dict_of_ciphers):
+    key = str()
+    for cipher in dict_of_ciphers.values():
+        print("*" * 30)
+        char_occurance = list()
+        min_result = 10000
+        index_of_e = -1
+        for index in range(65, 91):
+            letter = chr(index)
+            counter = count_char(letter, cipher)
+            char_occurance.append(counter)
+
+        for character in range(len(letter_freq_list)):
+            char_occurance_index = 0
+            result = 0
+            temp_index_of_e = -1
+            for index in range(65, 91):
+                letter = chr(index)
+                letChar = letter_list[(char_occurance_index + character) % 26]
+                if letChar == "e":
+                    temp_index_of_e = index
+                result += abs(abs(char_occurance[char_occurance_index]) - abs(
+                    letter_freq_list[(char_occurance_index + character) % 26]))
+                print(
+                    "Letter -> " + letter + " | Helper Letter -> " + letChar + " | Frequency from the cipher -> " + str(
+                        abs(char_occurance[char_occurance_index])) + " | Frequency from the helper -> " + str(
+                        abs(letter_freq_list[(char_occurance_index + character) % 26])) + " | Difference -> " + str(
+                        abs(char_occurance[char_occurance_index]) - abs(
+                            letter_freq_list[(char_occurance_index + character) % 26])))
+                char_occurance_index += 1
+
+            print("*" * 30)
+            if result < min_result:
+                min_result = result
+                index_of_e = temp_index_of_e
+
+        key += (chr(index_of_e - 4))
+
+    print("Key is : " + key)
+
+    return key
 
 
 ciphertext = """Fwg atax: P’tx oh li hvabawl jwgvmjs, nw fw tfiapqz lziym, rqgv uuwfpxj wpbk jxlnlz fptf noqe wgw.
@@ -70,7 +139,6 @@ dict_of_div = {}
 sorted_letter_Freq_dict = {}
 key_choice_difference = {}
 dict_of_ciphers = {}
-key = str()
 
 for elem in sorted(letterFrequency.items()):
     sorted_letter_Freq_dict[elem[0]] = elem[1]
@@ -97,58 +165,7 @@ for i in range(0, len(ciphertext_uppercase) - 2):
                 else:
                     dict_of_tripgrah[three_word] = [j + 2 - last_index]
 
-for i in dict_of_tripgrah.values():
-    for j in i:
-        if j > 0:
-            div_list = find_div(j)
-            for div in div_list:
-                if div in dict_of_div:
-                    dict_of_div[div] += 1
-                else:
-                    dict_of_div[div] = 0
-
-key_length = max(dict_of_div, key=dict_of_div.get)
-
-for i in range(0, key_length):
-    three_word = str()
-    for index in range(i, len(ciphertext_uppercase), key_length):
-        three_word += ciphertext_uppercase[index]
-    dict_of_ciphers[i] = three_word
-
-for cipher in dict_of_ciphers.values():
-    print("*" * 30)
-    char_occurance = list()
-    min_result = 10000
-    index_of_e = -1
-    for index in range(65, 91):
-        letter = chr(index)
-        counter = count_char(letter, cipher)
-        char_occurance.append(counter)
-
-    for character in range(len(letter_freq_list)):
-        char_occurance_index = 0
-        result = 0
-        temp_index_of_e = -1
-        for index in range(65, 91):
-            letter = chr(index)
-            letChar = letter_list[(char_occurance_index + character) % 26]
-            if letChar == "e":
-                temp_index_of_e = index
-            result += abs(abs(char_occurance[char_occurance_index]) - abs(
-                letter_freq_list[(char_occurance_index + character) % 26]))
-            print("Letter -> " + letter + " | Helper Letter -> " + letChar + " | Frequency from the cipher -> " + str(
-                abs(char_occurance[char_occurance_index])) + " | Frequency from the helper -> " + str(
-                abs(letter_freq_list[(char_occurance_index + character) % 26])) + " | Difference -> " + str(
-                abs(char_occurance[char_occurance_index]) - abs(
-                    letter_freq_list[(char_occurance_index + character) % 26])))
-            char_occurance_index += 1
-
-        print("*" * 30)
-        if result < min_result:
-            min_result = result
-            index_of_e = temp_index_of_e
-
-    key += (chr(index_of_e - 4))
-
-print("Key is : " + key)
-print("Plain Text : " + decrypt(ciphertext_uppercase_without_space, key))
+key_length = find_key_length(dict_of_tripgrah)
+dict_of_ciphers = separete_cipher(key_length, ciphertext_uppercase)
+key = freq_analysis(dict_of_ciphers)
+plaintext = decrypt(ciphertext_uppercase_without_space, key)
