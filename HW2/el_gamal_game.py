@@ -1,9 +1,6 @@
 import base64
 import math
 import time
-
-from cryptography.hazmat.primitives.asymmetric import rsa
-
 from sympy import gcd, randprime
 
 
@@ -24,6 +21,7 @@ def encode_message(message):
 
     return base64_message
 
+
 def decode_message(encoded_message):
     base64_bytes = encoded_message.encode('utf-8')
     message_bytes = base64.b64decode(base64_bytes)
@@ -31,10 +29,11 @@ def decode_message(encoded_message):
 
     return message
 
+
 def send_message(server, s, p):
     user_input = input("Your Reply: ")
-    encrypted_message = str(encryption(user_input, s))
-    encoded_message = encode_message(encrypted_message)
+    encrypted_message_str = str(encryption(user_input, s))
+    encoded_message = encode_message(encrypted_message_str)
 
     server.write("******************************************")
     server.write("\nPublic Key: " + str(p))
@@ -60,7 +59,6 @@ def encryption(user_input, s):
 
 def decryiption(encoded_message, s):
     encrypted_message = decode_message(encoded_message)
-
     decrypted_message = int(encrypted_message) * pow(s, q - 2, q) % q
     decrypted_message = decrypted_message.to_bytes((decrypted_message.bit_length() + 7) // 8, 'big').decode()
     return decrypted_message
@@ -122,7 +120,7 @@ if len(server.readlines()) == 0:
     if encrypted_message != "":
         s = pow(public_key, secret_key, q)
 
-        recieve_message(encrypted_message,server, s)
+        recieve_message(encrypted_message, server, s)
         send_message(server, s, h)
 
 
@@ -164,4 +162,4 @@ else:
         if line[0:15] == "Encrypted Text:":
             encrypted_message = line[16:]
 
-    recieve_message(encrypted_message,server, s)
+    recieve_message(encrypted_message, server, s)
