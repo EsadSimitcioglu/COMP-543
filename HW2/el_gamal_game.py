@@ -30,26 +30,25 @@ def decode_message(encoded_message):
     return message
 
 
-def send_message(server, s, p):
+def send_message(s):
     user_input = input("Your Reply: ")
     encrypted_message_str = str(encryption(user_input, s))
     encoded_message = encode_message(encrypted_message_str)
 
-    server.write("******************************************")
-    server.write("\nPublic Key: " + str(p))
-    server.write("\nEncrypted Text: " + encoded_message + "\n")
-    server.write("******************************************")
-    server.close()
+    with open("server.txt", "a") as file:
+        file.write("******************************************")
+        file.write("\nEncrypted Text: " + encoded_message)
 
 
-def recieve_message(encrypted_message, server, s):
+def recieve_message(encrypted_message, s):
     decrypted_message = decryiption(encrypted_message, s)
-    print(decrypted_message)
+    print("The Decryption of the Message is: " + decrypted_message)
     encoded_message = encode_message(decrypted_message)
 
-    server.write("******************************************")
-    server.write("\nDecrypted Message: " + encoded_message + "\n")
-    server.write("******************************************")
+    with open("server.txt", "a") as file:
+        file.write("******************************************")
+        file.write("\nDecrypted Message: " + encoded_message + "\n")
+        file.write("******************************************")
 
 
 def encryption(user_input, s):
@@ -62,6 +61,44 @@ def decryiption(encoded_message, s):
     decrypted_message = int(encrypted_message) * pow(s, q - 2, q) % q
     decrypted_message = decrypted_message.to_bytes((decrypted_message.bit_length() + 7) // 8, 'big').decode()
     return decrypted_message
+
+
+def check_message():
+    lines = []
+    encrypted_message_in_file = ""
+
+    print("Waiting For Response...")
+
+    while True:
+        with open("server.txt", "r") as file:
+            lines = file.readlines()
+            for file_line in lines:
+                if file_line[0:15] == "Encrypted Text:":
+                    encrypted_message_in_file = file_line[16:]
+
+        if encrypted_message_in_file != "":
+            with open('server.txt', 'w') as f:
+                for line in lines:
+                    if not line.startswith('Encrypted Text:'):
+                        f.write(line)
+            break
+
+        # Pause for 5 seconds
+        time.sleep(5)
+
+    return encrypted_message_in_file
+
+
+def get_public_key():
+    server = open("server.txt", "r+")
+
+    public_key = ""
+    for line in server.readlines():
+
+        if line[0:10] == "Public Key":
+            public_key = int(line[12:])
+
+    return public_key
 
 
 server = open("server.txt", "r+")
@@ -103,26 +140,15 @@ if len(server.readlines()) == 0:
 
     server.close()
 
-    print("Waiting...")
-    time.sleep(5)
 
-    server = open("server.txt", "r+")
-
-    public_key = ""
-    encrypted_message = ""
-    for line in server.readlines():
-
-        if line[0:10] == "Public Key":
-            public_key = int(line[12:])
-        elif line[0:14] == "Encrypted Text":
-            encrypted_message = line[16:]
-
-    if encrypted_message != "":
+    while True:
+        time.sleep(5)
+        print("Deleting The Last Message")
+        encrypted_message_in_file = check_message()
+        public_key = get_public_key()
         s = pow(public_key, secret_key, q)
-
-        recieve_message(encrypted_message, server, s)
-        send_message(server, s, h)
-
+        recieve_message(encrypted_message_in_file, s)
+        send_message(s)
 
 else:
 
@@ -150,16 +176,13 @@ else:
     p = pow(g, k, q)
     s = pow(h, k, q)
 
-    send_message(server, s, p)
-    print("Waiting...")
-    time.sleep(5)
+    with open("server.txt", "a") as file:
+        file.write("******************************************")
+        file.write("\nPublic Key: " + str(p) + "\n")
 
-    server = open("server.txt", "r+")
-
-    encrypted_message = ""
-    for line in server.readlines():
-
-        if line[0:15] == "Encrypted Text:":
-            encrypted_message = line[16:]
-
-    recieve_message(encrypted_message, server, s)
+    while True:
+        send_message(s)
+        time.sleep(5)
+        print("Deleting The Last Message")
+        encrypted_message_in_file = check_message()
+        recieve_message(encrypted_message_in_file, s)
