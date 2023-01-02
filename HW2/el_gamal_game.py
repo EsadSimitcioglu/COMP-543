@@ -92,13 +92,13 @@ def check_message():
 def get_public_key():
     server = open("server.txt", "r+")
 
-    public_key = ""
+    public_key_encoded = ""
     for line in server.readlines():
 
         if line[0:10] == "Public Key":
-            public_key = int(line[12:])
+            public_key_encoded = (line[12:])
 
-    return public_key
+    return decode_message(public_key_encoded)
 
 
 server = open("server.txt", "r+")
@@ -149,7 +149,7 @@ if len(server.readlines()) == 0:
         time.sleep(5)
         print("Deleting The Last Message")
         encrypted_message_in_file = check_message()
-        public_key = get_public_key()
+        public_key = int(get_public_key())
         s = pow(public_key, secret_key, q)
         receive_message(encrypted_message_in_file, s)
         send_message(s)
@@ -190,9 +190,11 @@ else:
     p = pow(g, k, q)
     s = pow(h, k, q)
 
+    p_encoded = encode_message(str(p))
+
     with open("server.txt", "a") as file:
         file.write("******************************************")
-        file.write("\nPublic Key: " + str(p) + "\n")
+        file.write("\nPublic Key: " + p_encoded + "\n")
 
     while True:
         send_message(s)
