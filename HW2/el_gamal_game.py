@@ -40,14 +40,14 @@ def send_message(s):
         file.write("\nEncrypted Text: " + encoded_message)
 
 
-def recieve_message(encrypted_message, s):
-    decrypted_message = decryiption(encrypted_message, s)
+def receive_message(encrypted_message, s):
+    decrypted_message = decryption(encrypted_message, s)
     print("The Decryption of the Message is: " + decrypted_message)
     encoded_message = encode_message(decrypted_message)
 
     with open("server.txt", "a") as file:
         file.write("******************************************")
-        file.write("\nDecrypted Message: " + encoded_message + "\n")
+        file.write("\nDecrypted Message: " + decrypted_message + "\n")
         file.write("******************************************")
 
 
@@ -56,7 +56,7 @@ def encryption(user_input, s):
     return encrypted_message
 
 
-def decryiption(encoded_message, s):
+def decryption(encoded_message, s):
     encrypted_message = decode_message(encoded_message)
     decrypted_message = int(encrypted_message) * pow(s, q - 2, q) % q
     decrypted_message = decrypted_message.to_bytes((decrypted_message.bit_length() + 7) // 8, 'big').decode()
@@ -132,10 +132,14 @@ if len(server.readlines()) == 0:
     print("Private key:")
     print("a:", secret_key)
 
+    h_encoded = encode_message(str(h))
+    q_encoded = encode_message(str(q))
+    g_encoded = encode_message(str(g))
+
     server.write("******************************************\n")
-    server.write("H: " + str(h) + "\n")
-    server.write("Q: " + str(q) + "\n")
-    server.write("G: " + str(g) + "\n")
+    server.write("H: " + h_encoded + "\n")
+    server.write("Q: " + q_encoded + "\n")
+    server.write("G: " + g_encoded + "\n")
     server.write("******************************************")
 
     server.close()
@@ -147,7 +151,7 @@ if len(server.readlines()) == 0:
         encrypted_message_in_file = check_message()
         public_key = get_public_key()
         s = pow(public_key, secret_key, q)
-        recieve_message(encrypted_message_in_file, s)
+        receive_message(encrypted_message_in_file, s)
         send_message(s)
 
 else:
@@ -155,17 +159,27 @@ else:
     server.seek(0)
 
     h = ""
+    h_encoded = ""
     q = ""
+    q_encoded = ""
     g = ""
+    g_encoded = ""
 
     for line in server.readlines():
 
         if line[0] == "H":
-            h = int(line[3:])
+            h_encoded = line[3:]
         elif line[0] == "Q":
-            q = int(line[3:])
+            q_encoded = line[3:]
         elif line[0] == "G":
-            g = int(line[3:])
+            g_encoded = line[3:]
+
+
+
+    h = int(decode_message(h_encoded))
+    q = int(decode_message(q_encoded))
+    g = int(decode_message(g_encoded))
+
 
     gen = cyclic_group_generator(q)
 
@@ -185,4 +199,4 @@ else:
         time.sleep(5)
         print("Deleting The Last Message")
         encrypted_message_in_file = check_message()
-        recieve_message(encrypted_message_in_file, s)
+        receive_message(encrypted_message_in_file, s)
